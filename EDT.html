@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Waste Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            background: #5cb85c;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        nav {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        nav a {
+            margin: 0 15px;
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        section {
+            display: none; /* All sections hidden by default */
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #777;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .btn {
+            background: #5cb85c;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .btn:hover {
+            background: #4cae4c;
+        }
+
+        #homeSection {
+            display: block;
+        } /* Show home section by default */
+
+        #myPieChart {
+            max-width: 600px;
+            margin: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Food Waste Management System</h1>
+    </header>
+
+    <nav id="navigation">
+        <a onclick="showSection('homeSection')">Home</a>
+        <a onclick="showSection('aboutSection')">About Us</a>
+        <a onclick="showSection('hotelSection')">Our Partner</a>
+        <a onclick="showSection('menuSection')">Menu</a>
+        <a onclick="showSection('tipsSection')">Tips</a>
+        <a onclick="showSection('contactSection')">Contact Us</a>
+    </nav>
+
+    <section id="homeSection">
+        <h2>Welcome to our Food Waste Management Initiative</h2>
+        <p>
+            In our effort to minimize food waste, our hotel has implemented several strategies aimed at reducing waste generated
+            in our kitchens and dining areas. 
+            <br>
+            "Reducing food loss and waste is one of the most effective ways to create a sustainable food system."
+            <br>
+            "Food waste is a valuable resource. If we really want to create a sustainable food system, we need to rethink how
+            we manage our resources."
+        </p>
+
+        <h3>Key Strategies</h3>
+        <ul>
+            <li>Regularly monitor inventory to avoid over-ordering.</li>
+            <li>Utilize food donations to local shelters.</li>
+            <li>Composting organic waste.</li>
+            <li>Inventory tracking and reporting.</li>
+        </ul>
+
+        <h3>Tips for Guests</h3>
+        <p>
+            As our valued guests, you can also contribute to minimizing food waste:
+        </p>
+        <ul>
+            <li>Order only what you can eat.</li>
+            <li>Take leftovers to your room if you're unable to finish your meal.</li>
+            <li>Participate in our breakfast buffet with smaller servings.</li>
+        </ul>
+
+        <h3>Food Waste Distribution</h3>
+        <canvas id="myPieChart"></canvas>
+
+        <script>
+            async function fetchWasteData() {
+                try {
+                    const response = await fetch('http://localhost:5000/api/waste'); 
+
+                    // Check if the response is OK
+                    if (!response.ok) {
+                        throw new Error('Error fetching data: ' + response.statusText);
+                    }
+
+                    // Parse the JSON data
+                    const data = await response.json();
+
+                    // Update your pie chart data with the fetched data
+                    const labels = data.map(item => item.type);
+                    const percentages = data.map(item => item.percentage);
+
+                    const ctx = document.getElementById('myPieChart').getContext('2d');
+
+                    // If a chart instance already exists, destroy it before creating a new one
+                    if (window.myPieChart) {
+                        window.myPieChart.destroy();
+                    }
+
+                    // Create a new pie chart
+                    window.myPieChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Food Waste Distribution',
+                                data: percentages,
+                                backgroundColor: [
+                                    '#FF6384',
+                                    '#36A2EB',
+                                    '#FFCE56',
+                                    '#4BC0C0',
+                                    '#9966FF'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Food Waste Breakdown'
+                                },
+                                datalabels: {
+                                    color: '#fff',
+                                    anchor: 'end',
+                                    align: 'end',
+                                    formatter: (value, context) => {
+                                        const dataset = context.chart.data.datasets[context.datasetIndex];
+                                        const total = dataset.data.reduce((acc, curr) => acc + curr, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return percentage + '%'; // Display percentage
+                                    }
+                                }
+                            }
+                        },
+                        plugins: [ChartDataLabels] // Register the datalabels plugin here
+                    });
+
+                } catch (error) {
+                    console.error('Failed to fetch data:', error);
+                } finally {
+                    // Optionally update the chart with default data if fetch fails
+                    // Uncomment to reset to a default state
+                    /*
+                     const ctx = document.getElementById('myPieChart').getContext('2d');
+                     window.myPieChart = new Chart(ctx, {
+                         type: 'pie',
+                         data: {
+                             labels: ['Unknown'],
+                             datasets: [{
+                                 label: 'Food Waste Distribution',
+                                 data: [0],
+                                 backgroundColor: ['#FF6384']
+                             }]
+                         },
+                         options: {
+                             responsive: true,
+                             plugins: {
+                                 legend: {
+                                     position: 'top',
+                                 },
+                                 title: {
+                                     display: true,
+                                     text: 'Food Waste Breakdown'
+                                 }
+                             }
+                         },
+                         plugins: [ChartDataLabels]
+                     });
+                     */
+                }
+            }
+            // Call the function to fetch data and render the chart
+            fetchWasteData();
+        </script>
+    </section>
+
+    <section id="aboutSection">
+        <h2>About Us</h2>
+        <p>
+            Our mission is to reduce food waste and promote sustainability in our hotel operations.
+            <br>
+            <br> we are deeply committed to fostering sustainability and reducing food waste as part of our core values. Understanding the growing concern surrounding food waste and its environmental impact, we have developed a comprehensive Food Waste Management System that embraces innovative practices and engages both our staff and guests. Our system focuses on key strategies such as optimal inventory management, efficient meal planning, and thorough staff training, all aimed at minimizing waste from the kitchen to the dining table. We not only donate surplus food to local charities but also incorporate composting initiatives to repurpose organic waste, turning it into valuable resources for local gardens. Our goal is to create a more sustainable dining experience while inspiring our guests to be mindful of food consumption. Together, we can make a significant impact on our planet, reducing waste and promoting responsible food resource management. Join
+<br> we are deeply committed to fostering sustainability and reducing food waste as part of our core values. Understanding the growing concern surrounding food waste and its environmental impact, we have developed a comprehensive Food Waste Management System that embraces innovative practices and engages both our staff and guests. Our system focuses on key strategies such as optimal inventory management, efficient meal planning, and thorough staff training, all aimed at minimizing waste from the kitchen to the dining table. We not only donate surplus food to local charities but also incorporate composting initiatives to repurpose organic waste, turning it into valuable resources for local gardens. Our goal is to create a more sustainable dining experience while inspiring our guests to be mindful of food consumption. Together, we can make a significant impact on our planet, reducing waste and promoting responsible food resource management. Join us in our journey towards a greener future!
+    </p>
+    <h3>Our Commitment</h3>
+    <p>
+        We are dedicated to improving our food management systems and involving our guests in our initiatives.
+    </p>
+</section>
+
+<section id="tipsSection">
+    <h2>Tips for Reducing Food Waste</h2>
+    <ul>
+        <li>Planning & Shopping.</li>
+        <li>Composting.</li>
+        <li>Eating Habits.</li>
+        <li>Storage.</li>
+        <li>Donations.</li>
+        <li>Be mindful of your portion sizes.</li>
+        <li>Share meals with your fellow guests.</li>
+        <li>Take advantage of our composting program.</li>
+    </ul>
+</section>
+
+<section id="contactSection">
+    <h2>Contact Us</h2>
+    <p>Email us at: <br>cklohith2006@gmail.com
+    <br>motukuriabhinav@gmail.com
+    <br>anishchandrapolkampally@gmail.com
+    <br>jonnadapavan@gmail.com
+    <br>vaishnavibodla17@gmail.com</p>
+    <p>Call us: <br>(+91) 9346721229
+    <br>(+91) 9100467279
+    <br>(+91) 7893772025
+    <br>(+91) 9848568025
+    <br>(+91) 9059656350</p>
+</section>
+<section id="hotelSection">
+    <h2>Our Partner Hotels</h2>
+    <p>We are proudly partnering with <strong>The Green Plate Hotel</strong>. They are dedicated to sustainability and utilize our platform to manage and show their food availability effectively.</p>
+    
+    <h3>About The Green Plate Hotel</h3>
+    <p>
+        The Green Plate Hotel is committed to reducing food waste by efficiently managing food inventory and ensuring that surplus food is either consumed or donated. Utilizing our website, they can easily display their available meals and utilize excess food creatively.
+    </p>
+
+<label for="foodMenu">Select an item to view:</label>
+    <select id="foodMenu" onchange="displaySelectedItem()">
+        <option value="">-- Select an Item --</option>
+        <option value="Fresh salads">Fresh salads sourced from local gardens</option>
+        <option value="Seasonal vegetables">Seasonal vegetables prepared in various styles</option>
+        <option value="Fruit desserts">Desserts made with surplus fruits</option>
+        <option value="Daily specials">Daily specials featuring ingredients at risk of spoilage</option>
+    </select>
+
+    <div id="selectedItem" style="margin-top: 20px;"></div>
+<script>
+function displaySelectedItem() {
+    const selectMenu = document.getElementById('foodMenu');
+    const selectedItemDisplay = document.getElementById('selectedItem');
+    
+    // Get the selected value
+    const selectedValue = selectMenu.value;
+    
+    // Display the selected value
+    if (selectedValue) {
+        selectedItemDisplay.textContent = You selected: ${selectedValue};
+    } else {
+        selectedItemDisplay.textContent = ''; // Clear if no selection
+    }
+}
+</script>
+</section>
+<section id="menuSection">
+    <h2>Menu</h2>
+    <p>Here is a selection of items available in our partner hotel:</p>
+    <div class="menu-list" id="menuList"></div>
+
+    <h3>Add a New Menu Item</h3>
+    <input type="text" id="newMenuItem" placeholder="New menu item" />
+    <button onclick="addMenuItem()">Add Item</button>
+</section>
+
+
+<!-- Include Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        getMenuItems(); // Fetch and display menu items on load
+    });
+
+    async function getMenuItems() {
+        try {
+            const response = await fetch('/api/menu'); // Adjust the URL as appropriate
+            const data = await response.json();
+            
+            const menuList = document.getElementById('menuList');
+            menuList.innerHTML = ''; // Clear any existing items
+            
+            data.items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('menu-item');
+                itemElement.textContent = item.name; // Assuming item has a 'name' property
+                menuList.appendChild(itemElement);
+            });
+        } catch (error) {
+            console.error('Error fetching menu items:', error);
+        }
+    }
+
+    async function addMenuItem() {
+        const newMenuItem = document.getElementById('newMenuItem').value;
+
+        if (!newMenuItem) {
+            alert('Please enter a menu item name.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/menu', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: newMenuItem }) // Send new menu item in JSON format
+            });
+
+            if (response.ok) {
+                document.getElementById('newMenuItem').value = ''; // Clear the input
+                getMenuItems(); // Refresh the menu list
+            } else {
+                throw new Error('Failed to add menu item');
+            }
+        } catch (error) {
+            console.error('Error adding menu item:', error);
+        }
+    }
+
+    function showSection(sectionId) {
+        const sections = document.querySelectorAll('section');
+        sections.forEach((section) => {
+            section.style.display = 'none';
+        });
+        
+        document.getElementById(sectionId).style.display = 'block';
+    }
+
+    // Setup Chart.js after the sections are defined
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('myPieChart').getContext('2d');
+        const myPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Vegetable Scraps', 'Meat Waste', 'Fruits', 'Grains', 'Dairy'],
+                datasets: [{
+                    label: 'Food Waste Distribution',
+                    data: [30, 15, 25, 20, 10],
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Food Waste Breakdown'
+                    },
+                    datalabels: {
+                        color: '#fff',
+                        anchor: 'end',
+                        align: 'end',
+                        formatter: (value, context) => {
+                            const dataset = context.chart.data.datasets[context.datasetIndex];
+                            const total = dataset.data.reduce((acc, curr) => acc + curr, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return percentage + '%';
+                        }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    });
+</script>
+
+</body>
+</html>
